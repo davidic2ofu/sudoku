@@ -1,11 +1,14 @@
+import matplotlib.pyplot as plt
 import numpy as np
+import os
 from time import time
 
 from puzzles import PUZZLES
 
 
-TEMP = 2.25
 NUM_ITERATIONS = 500000
+TEMP = 2.25
+TEMP_FACTOR = 0.999995
 
 
 def timed(func):
@@ -15,6 +18,16 @@ def timed(func):
 		end = time()
 		return end - start
 	return wrapper
+
+
+def display_plot(scores):
+	plt.figure(figsize=(10,2))
+	plt.scatter(range(len(scores)), scores, s=1, c=np.random.rand(len(scores)),)
+	plt.title('Simulated Annealing Convergence Plot for Sudoku')
+	plt.xlabel('Iterations')
+	plt.ylabel('Score (0 is a perfect score)')
+	plt.savefig('plot.png')
+	os.system('open plot.png')
 
 
 def fill_in_with_initial_values(puzzle):
@@ -70,7 +83,7 @@ def handle(empty_puzzle):
 	
 	for i in range(NUM_ITERATIONS):
 		scores.append(score)
-		if i % 50 == 0 or score == 0:
+		if i % 100 == 0 or score == 0:
 			print('iteration {}, score {}'.format(i, score))
 			if score == 0:
 				break
@@ -81,7 +94,9 @@ def handle(empty_puzzle):
 		if test_score < score or boltz - np.random.random() > 0:
 			puzzle = test_puzzle
 			score = test_score
-		temp *= 0.999995
+		temp *= TEMP_FACTOR
+
+	display_plot(scores)
 
 	print(empty_puzzle)
 	print(puzzle)
@@ -89,6 +104,6 @@ def handle(empty_puzzle):
 
 
 if __name__ == '__main__':
-	empty_puzzle = PUZZLES[0]
+	empty_puzzle = PUZZLES[1]
 	num_seconds = handle(empty_puzzle)
 	print('{} seconds'.format(num_seconds))

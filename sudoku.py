@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys
 from time import time
 
-from puzzles import PUZZLES
+from puzzles import PUZZLES, print_puzzle
 
 
 NUM_ITERATIONS = 500000
@@ -75,8 +76,9 @@ def flip_cells(empty_puzzle, puzzle):
 
 
 @timed
-def handle(empty_puzzle):
-	temp = TEMP
+def handle(empty_puzzle, temp=TEMP, temp_factor=TEMP_FACTOR):
+	start_temp = temp
+
 	scores = []
 	puzzle = fill_in_with_initial_values(empty_puzzle)
 	score = get_score(puzzle)
@@ -84,7 +86,7 @@ def handle(empty_puzzle):
 	for i in range(NUM_ITERATIONS):
 		scores.append(score)
 		if i % 100 == 0 or score == 0:
-			print('iteration {}, score {}'.format(i, score))
+			print('iteration {:6}, score {:3} {}'.format(i, score, '.' * score))
 			if score == 0:
 				break
 		test_puzzle = flip_cells(empty_puzzle, puzzle)
@@ -94,16 +96,24 @@ def handle(empty_puzzle):
 		if test_score < score or boltz - np.random.random() > 0:
 			puzzle = test_puzzle
 			score = test_score
-		temp *= TEMP_FACTOR
+		temp *= temp_factor
 
 	display_plot(scores)
 
-	print(empty_puzzle)
-	print(puzzle)
-	print('final score {}'.format(score))
+	print_puzzle(empty_puzzle)
+	print_puzzle(puzzle)
+	print('Starting temperature: {}'.format(start_temp))
+	print('Ending temperature: {}'.format(temp)) 
+	print('Temp factor: {}'.format(temp_factor))
+	print('Final score {}'.format(score))
 
 
 if __name__ == '__main__':
-	empty_puzzle = PUZZLES[1]
-	num_seconds = handle(empty_puzzle)
+	empty_puzzle = PUZZLES[0]
+	if len(sys.argv) == 4:
+		temp = float(sys.argv[2])
+		temp_factor = float(sys.argv[3])
+		num_seconds = handle(empty_puzzle, temp, temp_factor)
+	else:
+		num_seconds = handle(empty_puzzle)
 	print('{} seconds'.format(num_seconds))

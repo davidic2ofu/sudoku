@@ -7,26 +7,26 @@ from time import time
 from puzzles import PUZZLES, print_puzzle
 
 
-NUM_ITERATIONS = 500000
-TEMP = 2.25
+MAX_NUM_ITERATIONS = 500000
+TEMP = 3.0
 TEMP_FACTOR = 0.999995
 
 
 def timed(func):
 	def wrapper(*args, **kwargs):
 		start = time()
-		func(*args, *kwargs)
+		func(*args, **kwargs)
 		end = time()
 		return end - start
 	return wrapper
 
 
 def display_plot(scores):
-	plt.figure(figsize=(10,2))
+	plt.figure(figsize=(12,3))
 	plt.scatter(range(len(scores)), scores, s=1, c=np.random.rand(len(scores)),)
 	plt.title('Simulated Annealing Convergence Plot for Sudoku')
 	plt.xlabel('Iterations')
-	plt.ylabel('Score (0 is a perfect score)')
+	plt.ylabel('Score')
 	plt.savefig('plot.png')
 	os.system('open plot.png')
 
@@ -83,7 +83,7 @@ def handle(empty_puzzle, temp=TEMP, temp_factor=TEMP_FACTOR):
 	puzzle = fill_in_with_initial_values(empty_puzzle)
 	score = get_score(puzzle)
 	
-	for i in range(NUM_ITERATIONS):
+	for i in range(MAX_NUM_ITERATIONS):
 		scores.append(score)
 		if i % 100 == 0 or score == 0:
 			print('iteration {:6}, score {:3} {}'.format(i, score, '.' * score))
@@ -110,9 +110,10 @@ def handle(empty_puzzle, temp=TEMP, temp_factor=TEMP_FACTOR):
 
 if __name__ == '__main__':
 	empty_puzzle = PUZZLES[0]
-	if len(sys.argv) == 4:
-		temp = float(sys.argv[2])
-		temp_factor = float(sys.argv[3])
+	print(sys.argv)
+	if len(sys.argv) == 3:
+		temp = float(sys.argv[1])
+		temp_factor = float(sys.argv[2])
 		num_seconds = handle(empty_puzzle, temp, temp_factor)
 	else:
 		num_seconds = handle(empty_puzzle)

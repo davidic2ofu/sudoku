@@ -109,7 +109,7 @@ def handle(empty_puzzle, temp=TEMP, temp_factor=TEMP_FACTOR):
 
 
 if __name__ == '__main__':
-	empty_puzzle = PUZZLES[0]
+	empty_puzzle = PUZZLES['expert']
 	print(sys.argv)
 	if len(sys.argv) == 3:
 		temp = float(sys.argv[1])

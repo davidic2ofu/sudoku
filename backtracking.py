@@ -1,6 +1,9 @@
 import numpy as np
+import sys
 
 from puzzles import PUZZLES, print_puzzle
+
+sum = 0
 
 
 def get_box_cell_values(puzzle, y, x):
@@ -15,6 +18,20 @@ def naive_select_cell(puzzle):
 
 
 def informed_select_cell(puzzle):
+	'''
+	https://medium.com/my-udacity-ai-nanodegree-notes/solving-sudoku-think-constraint-satisfaction-problem-75763f0742c9
+	from our lecture slides:
+	agent: perceives environment through sensors and acts on environment through actuators
+	rational means intelligent
+	rational agent: environment, percepts, actions, rationality, agent program
+	selects actions to maximize utility function
+	characteristics of percepts, environment, action space dictate techniques for selecting
+	rational actions.
+	"map the percepts to the actions to maximize the performance measure"
+	learn to compensate for partial or incorrect background knowledge (like a human)
+	modeling the external world (puzzle and rules, constraints), dealing with uncertainties
+	single agent, deterministic/stochastic (?), partially observable?, discrete
+	'''
 	zeros = {}
 	y_coordinates, x_coordinates = np.where(puzzle == 0)
 	coordinates = zip(y_coordinates, x_coordinates)
@@ -43,3 +60,20 @@ def solve(puzzle, select_cell):
 				return True
 			puzzle[y, x] = 0
 	return False
+
+
+def run(puzz):
+	for diff in [naive_select_cell, informed_select_cell]:
+		global sum
+		sum = 0
+		p = PUZZLES[puzz].copy()
+		solve(p, diff)
+		print(puzz, str(diff), sum)
+
+
+if __name__ == '__main__':
+	if len(sys.argv) == 2:
+		run(sys.argv[1])
+	else:
+		for k in PUZZLES.keys():
+			run(k)

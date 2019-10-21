@@ -1,3 +1,4 @@
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -23,7 +24,10 @@ PUZZLES = {
 	'expert': '060910007002000015000004000900300000000006000403000250004000008000008704005070030',
 	'easy': '009002005538064009162000030003027000054600100007015340300801906700300850091000470',
 	'medium': '000000609100004000005306821004670050007000900000540000370405206000000510060020037',
-	'hard': '000108700000026015060040000200009050507200006001000084702094000400500070000070009',
+	'hard': '010000030730908200005310070100860402000005006000240000050409000006080040070000090',
+	'expert2': '300009801006000009800070000000400000500000060070080130010000400000203900054001000',
+	'expert3': '210000400000028000000000106000507608830000007000016003042300000053000070007900000',
+	'expert4': '006000004000860730040350002170400600090000080008006017200081040067043000800000300',
 }
 
 MAX_NUM_ITERATIONS = 500000
@@ -36,7 +40,7 @@ def timed(func):
 		start = time()
 		func(*args, **kwargs)
 		end = time()
-		print('Finished in {} seconds'.format(end - start))
+		print('Finished in {} seconds\n'.format(end - start))
 	return wrapper
 
 
@@ -52,24 +56,29 @@ class SudokuSolverBase(object):
 		self.puzzle = None
 
 	def __str__(self):
-		s = 'Original Puzzle: \n{}'.format(self.printable(self.blank_puzzle))
+		blank = ['Original Puzzle'] + self.printable(self.blank_puzzle)
 		if self.puzzle is not None:
-			s += '\nSolved Puzzle: \n{}'.format(self.printable(self.puzzle))
+			solved = ['Solved Puzzle'] + self.printable(self.puzzle)
+		else:
+			solved = [''] * len(blank)
+		ready_to_print = list(zip(blank, solved))
+
+		s = ''
+		for a, b in ready_to_print:
+			s += '\n' + '{:45}{}'.format(a, b).strip()
 		return s
 
 	def printable(self, puzzle):
-		output_list = []
+		output_list = ['╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗']
 		for i, row in enumerate(puzzle):
-			row = [x if x != 0 else '' for x in row]
-			if i == 0:
-				output_list.append('╔═══╤═══╤═══╦═══╤═══╤═══╦═══╤═══╤═══╗')
+			row = [x or '' for x in row]
 			if i in [3, 6]:
 				output_list.append('╠═══╪═══╪═══╬═══╪═══╪═══╬═══╪═══╪═══╣')
 			if i in [1, 2, 4, 5, 7, 8]:
 				output_list.append('╟───┼───┼───╫───┼───┼───╫───┼───┼───╢')
 			output_list.append('║ {:1} │ {:1} │ {:1} ║ {:1} │ {:1} │ {:1} ║ {:1} │ {:1} │ {:1} ║'.format(*row))
 		output_list.append('╚═══╧═══╧═══╩═══╧═══╧═══╩═══╧═══╧═══╝')
-		return '\n'.join(output_list)
+		return output_list
 
 
 class BacktrackingSolverBase(SudokuSolverBase):
@@ -79,8 +88,8 @@ class BacktrackingSolverBase(SudokuSolverBase):
 		super().__init__(s)
 
 	def __str__(self):
-		s = 'Iterations: {}\n'.format(self.sum) if self.sum else ''
-		return s + super().__str__()
+		s = '\nIterations: {}'.format(self.sum) if self.sum else ''
+		return super().__str__() + s
 
 	def select_cell(self, *args):
 		pass
@@ -96,7 +105,7 @@ class BacktrackingSolverBase(SudokuSolverBase):
 
 	def _solve(self):
 		self.sum += 1
-		if not 0 in self.puzzle:
+		if 0 not in self.puzzle:
 			return True
 		y, x = self.select_cell()
 		row = self.puzzle[y, :]
@@ -116,7 +125,6 @@ class BacktrackingSolverBase(SudokuSolverBase):
 		self.puzzle = self.blank_puzzle.copy()
 		if not self._solve():
 			raise RuntimeError('Invalid Puzzle')
-		print('Solved!')
 		print(self)
 
 
@@ -146,7 +154,7 @@ class InformedSelectiveBacktrackingSolver(InformedBacktrackingSolver):
 		unique, counts = np.unique(self.puzzle, return_counts=True)
 		d = dict(zip(unique, counts))
 		del d[0]
-		return sorted(d.keys(), key=d.get)
+		return sorted(d.keys(), key=d.get, reverse=True)
 
 
 class SimulatedAnnealingSolver(SudokuSolverBase):
@@ -162,9 +170,10 @@ class SimulatedAnnealingSolver(SudokuSolverBase):
 	def __str__(self):
 		s = super().__str__()
 		s += '\nStarting temperature: {}'.format(self.start_temp)
-		s += '\nEnding temperature: {}'.format(self.temp) 
 		s += '\nTemp factor: {}'.format(self.temp_factor)
-		s += '\nFinal score {}'.format(self.scores[-1])
+		if self.puzzle is not None:
+			s += '\nEnding temperature: {}'.format(self.temp) 
+			s += '\nFinal score {}'.format(self.scores[-1])
 		return s
 
 	@timed
@@ -245,17 +254,52 @@ class SimulatedAnnealingSolver(SudokuSolverBase):
 		os.system('open plot.png')
 
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+	'-d', '--difficulty',
+	action='store',
+	choices=list(PUZZLES.keys()),
+	default=list(PUZZLES.keys())[-1],
+	help='pick difficulty level from saved puzzles',
+)
+
+parser.add_argument(
+	'-sa', '--simulated_annealing',
+	action='store_true',
+	help='solve using simulated annealing',
+)
+
+parser.add_argument(
+	'-p', '--puzzle',
+	action='store',
+	help='specify your own puzzle'
+)
+
+
 if __name__ == '__main__':
-	print(sys.argv)
-	if len(sys.argv) > 1:
-		diff = sys.argv[-1]
+
+	args = parser.parse_args()
+	arg_dict = vars(args)
+
+	if arg_dict['simulated_annealing']:
+		solvers = [
+			SimulatedAnnealingSolver,
+		]
 	else:
-		diff = 'old' 
-	p = PUZZLES[diff]
-	for solver in [
-		NaiveBacktrackingSolver(p),
-		InformedBacktrackingSolver(p),
-		InformedSelectiveBacktrackingSolver(p),
-		SimulatedAnnealingSolver(p),
-	]:
-		solver.solve()
+		solvers = [
+			NaiveBacktrackingSolver,
+			InformedBacktrackingSolver,
+			InformedSelectiveBacktrackingSolver,
+		]
+
+	if arg_dict['puzzle']:
+		p = arg_dict['puzzle']
+	else:
+		difficulty = arg_dict['difficulty']
+		p = PUZZLES[difficulty]
+
+	for solver in solvers:
+		print('\n' + solver.__name__)
+		s = solver(p)
+		s.solve()
